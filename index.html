@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matériel de Laboratoire - الجزائر</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lab: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            800: '#0f4c81',
+                            900: '#0c3b66',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter & Cairo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js for invoice downloading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', 'Cairo', sans-serif; }
+        .tab-active { border-bottom: 3px solid #0284c7; color: #0f4c81; font-weight: 700; }
+        /* Invoice styling for crisp print/pdf output */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-invoice, #printable-invoice * { visibility: visible; }
+            #printable-invoice { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 15px; }
+            .no-print { display: none !important; }
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-lab-800 text-white sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-2 sm:space-x-3 rtl:space-x-reverse cursor-pointer" onclick="switchTab('catalog')">
+                <div class="bg-white text-lab-800 p-2 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-flask-vial text-xl sm:text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight leading-none" data-tr="appTitle">Matériel de Laboratoire</h1>
+                    <span class="text-[10px] text-sky-200 tracking-wider font-semibold uppercase" data-tr="appSubtitle">Équipement Scientifique & Médical Algérie</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-2 sm:space-x-3 rtl:space-x-reverse">
+                <!-- Lang Switcher -->
+                <button onclick="toggleLanguage()" class="px-2.5 py-1 text-xs bg-lab-900 hover:bg-sky-700 rounded-md border border-sky-600/40 transition flex items-center gap-1 font-semibold">
+                    <i class="fa-solid fa-globe"></i>
+                    <span id="langLabel">العربية</span>
+                </button>
+
+                <!-- Cart Icon -->
+                <button onclick="openCartModal()" class="relative p-2 bg-lab-900 hover:bg-sky-700 rounded-md transition text-white">
+                    <i class="fa-solid fa-cart-shopping text-base"></i>
+                    <span id="cartBadge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 items-center justify-center">0</span>
+                </button>
+
+                <!-- Auth / Profile Button -->
+                <div id="authNavContainer">
+                    <button onclick="openAuthModal()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs font-semibold shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-lock"></i>
+                        <span data-tr="connexion">Espace Pro / Admin</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Bar for Tabs -->
+    <nav class="bg-white border-b border-slate-200 sticky top-[53px] z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-2 flex space-x-1 sm:space-x-6 rtl:space-x-reverse overflow-x-auto text-xs sm:text-sm font-medium">
+            <button id="nav-catalog" onclick="switchTab('catalog')" class="py-2.5 px-3 whitespace-nowrap tab-active transition flex items-center gap-1.5">
+                <i class="fa-solid fa-store"></i> <span data-tr="tabCatalog">Catalogue Général</span>
+            </button>
+            <button id="nav-stores" onclick="switchTab('stores')" class="py-2.5 px-3 whitespace-nowrap text-slate-600 hover:text-lab-800 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-building-columns"></i> <span data-tr="tabStores">Fournisseurs & Labos</span>
+            </button>
+            <button id="nav-seller" onclick="switchTab('seller')" class="hidden py-2.5 px-3 whitespace-nowrap text-slate-600 hover:text-lab-800 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-boxes-stacked"></i> <span data-tr="tabSeller">Gestion Vendeur</span>
+            </button>
+            <button id="nav-admin" onclick="switchTab('admin')" class="hidden py-2.5 px-3 whitespace-nowrap text-red-600 font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved"></i> <span data-tr="tabAdmin">Super Admin</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Banner Info / Status -->
+    <div id="userBanner" class="hidden bg-sky-50 border-b border-sky-100 text-sky-900 text-xs py-1.5 px-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="userInfoText">Connecté en tant que...</span>
+            </div>
+            <button onclick="logout()" class="text-red-600 hover:underline font-bold text-[11px]">
+                <i class="fa-solid fa-power-off"></i> <span data-tr="logout">Déconnexion</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 mb-12">
+
+        <!-- TAB 1: CATALOGUE GENERAL -->
+        <section id="sec-catalog" class="space-y-4">
+            <!-- Filter & Search Bar -->
+            <div class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3 items-center justify-between">
+                <div class="relative w-full md:w-96">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 rtl:right-3 rtl:left-auto top-3 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="renderCatalog()" placeholder="Rechercher équipement, réactif, REF..." class="w-full pl-9 rtl:pr-9 rtl:pl-3 pr-3 py-2 border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-lab-500 focus:outline-none">
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                    <button onclick="filterCategory('ALL')" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-lab-800 text-white whitespace-nowrap" data-cat="ALL" data-tr="catAll">Tous</button>
+                    <button onclick="filterCategory('Consumables')" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap" data-cat="Consumables" data-tr="catCons">Consommables</button>
+                    <button onclick="filterCategory('Glassware')" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap" data-cat="Glassware" data-tr="catGlass">Verrerie</button>
+                    <button onclick="filterCategory('Reagents')" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap" data-cat="Reagents" data-tr="catReag">Réactifs</button>
+                    <button onclick="filterCategory('Devices')" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap" data-cat="Devices" data-tr="catDev">Appareils</button>
+                    <button onclick="filterCategory('Sterilization')" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap" data-cat="Sterilization" data-tr="catSter">Stérilisation</button>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Loaded dynamically -->
+            </div>
+        </section>
+
+        <!-- TAB 2: STORE DIRECTORY -->
+        <section id="sec-stores" class="hidden space-y-4">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
+                <i class="fa-solid fa-building text-lab-800"></i>
+                <span data-tr="storesTitle">Répertoire des Vendeurs Approuvés en Algérie</span>
+            </h2>
+            <div id="storesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Dynamic stores cards -->
+            </div>
+        </section>
+
+        <!-- TAB 3: SELLER DASHBOARD -->
+        <section id="sec-seller" class="hidden space-y-6">
+            <!-- Store Setup Summary & Action header -->
+            <div class="bg-gradient-to-r from-lab-800 to-lab-900 text-white p-4 sm:p-6 rounded-2xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <img id="sellerDashboardLogo" src="https://placehold.co/80x80/0f4c81/ffffff?text=LOGO" class="w-16 h-16 rounded-xl border-2 border-white/20 object-cover bg-white">
+                    <div>
+                        <h2 id="sellerStoreName" class="text-lg sm:text-xl font-bold">Mon Espace Vendeur</h2>
+                        <p id="sellerLegalInfo" class="text-xs text-sky-200">NIF: -- | NIS: -- | RC: --</p>
+                        <span id="sellerStatusBadge" class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-500 text-white">Compte Validé</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button onclick="openStoreProfileModal()" class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold transition border border-white/20 flex-1 md:flex-initial">
+                        <i class="fa-solid fa-id-card"></i> <span data-tr="editProfile">Profil & Cachet</span>
+                    </button>
+                    <button onclick="openAddProductModal()" class="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-lg text-xs font-bold shadow transition flex-1 md:flex-initial">
+                        <i class="fa-solid fa-circle-plus"></i> <span data-tr="addProduct">Nouveau Produit</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Seller Products Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-box text-lab-500"></i> <span data-tr="myProducts">Mes Produit Enregistrés</span>
+                    </h3>
+                    <span id="myProductsCount" class="text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">0 Produits</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left rtl:text-right text-xs">
+                        <thead class="bg-slate-50 text-slate-600 font-semibold border-b">
+                            <tr>
+                                <th class="p-3">Image</th>
+                                <th class="p-3">Désignation</th>
+                                <th class="p-3">Catégorie</th>
+                                <th class="p-3">Réf / N° Lot</th>
+                                <th class="p-3">Péremption</th>
+                                <th class="p-3">Prix TTC</th>
+                                <th class="p-3">Stock</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sellerProductsTable" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: SUPER ADMIN PANEL -->
+        <section id="sec-admin" class="hidden space-y-6">
+            <div class="bg-slate-900 text-white p-5 rounded-xl shadow-md border-l-4 border-red-500 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-red-500"></i> Espace Super Administrateur
+                    </h2>
+                    <p class="text-xs text-slate-400">Gestion centrale de la plateforme & Approbation des établissements matériel médical</p>
+                </div>
+                <!-- RIP / BaridiMob Config -->
+                <button onclick="openAdminSettingsModal()" class="px-3 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-wallet"></i> Compte BaridiMob / RIP & Abonnements
+                </button>
+            </div>
+
+            <!-- Pending Stores Approvals -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-500"></i> Demandes d'Approbation de Magasins/Fournisseurs
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left rtl:text-right text-xs">
+                        <thead class="bg-slate-50 text-slate-600 font-semibold border-b">
+                            <tr>
+                                <th class="p-3">Établissement</th>
+                                <th class="p-3">Contact</th>
+                                <th class="p-3">NIF / RC / NIS / NAI</th>
+                                <th class="p-3">Adresse</th>
+                                <th class="p-3">Statut</th>
+                                <th class="p-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminStoresTable" class="divide-y divide-slate-100">
+                            <!-- Admin table items -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING FOOTER BADGE -->
+    <footer class="bg-lab-900 text-slate-300 text-xs py-3 border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-microscope text-sky-400"></i>
+                <span class="font-medium">Matériel de Laboratoire Algérie</span>
+            </div>
+            <div class="px-3 py-1 bg-lab-800 rounded-full border border-sky-600/30 text-[11px] font-semibold text-sky-200">
+                © 2026 Taieb Ahmed Abd ElKrim
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- MODALS SECTION -->
+
+    <!-- 1. AUTH / LOGIN / REGISTER MODAL -->
+    <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-100">
+            <!-- Modal Tabs Header -->
+            <div class="flex border-b text-xs font-bold text-center bg-slate-50">
+                <button id="authTabLogin" onclick="switchAuthSubTab('login')" class="flex-1 py-3 border-b-2 border-lab-800 text-lab-800">Se Connecter</button>
+                <button id="authTabRegister" onclick="switchAuthSubTab('register')" class="flex-1 py-3 text-slate-500 hover:text-slate-800">Inscription Magasin</button>
+            </div>
+
+            <!-- Login Subform -->
+            <form id="formLogin" onsubmit="handleLogin(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Numéro de Téléphone</label>
+                    <input type="text" id="loginPhone" required placeholder="0670800009" class="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-lab-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mot de passe</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-lab-500">
+                </div>
+                <div class="bg-sky-50 p-2.5 rounded-lg border border-sky-100 text-[11px] text-sky-800 flex items-center gap-2">
+                    <i class="fa-solid fa-info-circle text-sky-600"></i>
+                    <span>Super Admin par défaut: <b>0670800009</b> / Pass: <b>2002</b></span>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAuthModal()" class="px-4 py-2 border rounded-lg text-xs font-semibold">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-lab-800 text-white rounded-lg text-xs font-bold hover:bg-lab-900">Connexion</button>
+                </div>
+            </form>
+
+            <!-- Register Subform (Store) -->
+            <form id="formRegister" onsubmit="handleRegister(event)" class="p-5 space-y-3 hidden max-h-[80vh] overflow-y-auto">
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nom de l'Établissement / Magasin *</label>
+                        <input type="text" id="regStoreName" required placeholder="Ex: BioTech Lab Supplies" class="w-full p-2 border rounded-lg text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Téléphone *</label>
+                        <input type="text" id="regPhone" required placeholder="06XXXXXXXX" class="w-full p-2 border rounded-lg text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Mot de Passe *</label>
+                        <input type="password" id="regPassword" required placeholder="••••••" class="w-full p-2 border rounded-lg text-xs">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Adresse Physiques (Wilaya, Ville) *</label>
+                        <input type="text" id="regAddress" required placeholder="Alger, Bab Ezzouar" class="w-full p-2 border rounded-lg text-xs">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 pt-2 text-[11px] font-bold text-lab-800">Identifiants Légaux Commercial (Algérie)</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] text-slate-600">NIN</label>
+                        <input type="text" id="regNIN" placeholder="Num Identification Nat." class="w-full p-1.5 border rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-600">N° Registre Commerce (RC)</label>
+                        <input type="text" id="regRC" placeholder="00/00-0000000B00" class="w-full p-1.5 border rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-600">NIF</label>
+                        <input type="text" id="regNIF" placeholder="N° Identification Fiscale" class="w-full p-1.5 border rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-600">NIS</label>
+                        <input type="text" id="regNIS" placeholder="N° Ident. Statistique" class="w-full p-1.5 border rounded text-xs">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-slate-600">N° Article d'Imposition (NAI)</label>
+                        <input type="text" id="regNAI" placeholder="Article d'Imposition" class="w-full p-1.5 border rounded text-xs">
+                    </div>
+                </div>
+
+                <p class="text-[10px] text-amber-600 italic">Note: Les comptes de magasin nécessitent la validation de l'administrateur avant accès au tableau de bord.</p>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAuthModal()" class="px-4 py-2 border rounded-lg text-xs font-semibold">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-sky-600 text-white rounded-lg text-xs font-bold hover:bg-sky-500">S'inscrire</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. BLOCKED / PENDING STORE MODAL -->
+    <div id="blockedModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full p-6 rounded-2xl shadow-2xl border border-red-200 text-center space-y-4">
+            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-hourglass-half animate-spin"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">Compte en Attente d'Approbation</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Votre compte est en attente d'approbation par l'administrateur.<br>
+                Veuillez patienter pendant la vérification de vos documents d'établissement.
+            </p>
+            <div class="bg-slate-50 p-3 rounded-lg border text-left text-xs space-y-1">
+                <div class="font-semibold text-slate-700">Paiement d'Abonnement via BaridiMob:</div>
+                <div class="text-[11px] text-slate-600" id="pendingBaridiInfo">RIP: 00799999000000000000 / Algérie Poste</div>
+            </div>
+            <button onclick="logout()" class="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-700">
+                Se Déconnecter
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. STORE PROFILE & STAMP EDIT MODAL -->
+    <div id="storeProfileModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden p-5 space-y-4">
+            <h3 class="text-sm font-bold border-b pb-2 text-lab-800 flex items-center gap-2">
+                <i class="fa-solid fa-stamp"></i> Modification du Profil & Cachet Officiel
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold mb-1">Logo Établissement</label>
+                    <input type="file" id="logoFileInput" accept="image/*" onchange="convertImageToBase64(this, 'previewLogoImg', 'logoBase64')" class="w-full text-xs">
+                    <img id="previewLogoImg" src="https://placehold.co/100x100?text=Logo" class="w-16 h-16 mt-2 rounded border object-cover">
+                    <input type="hidden" id="logoBase64">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Cachet / Griffe Officiel (Tampon)</label>
+                    <input type="file" id="stampFileInput" accept="image/*" onchange="convertImageToBase64(this, 'previewStampImg', 'stampBase64')" class="w-full text-xs">
+                    <img id="previewStampImg" src="https://placehold.co/120x80?text=Cachet" class="w-24 h-16 mt-2 rounded border object-contain bg-slate-50">
+                    <input type="hidden" id="stampBase64">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 border-t pt-3">
+                <button onclick="closeStoreProfileModal()" class="px-4 py-2 border rounded-lg text-xs">Fermer</button>
+                <button onclick="saveStoreProfileImages()" class="px-5 py-2 bg-lab-800 text-white rounded-lg text-xs font-bold">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. ADD / EDIT PRODUCT MODAL -->
+    <div id="productModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden p-5 space-y-3 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-sm font-bold border-b pb-2 text-lab-800 flex items-center gap-2">
+                <i class="fa-solid fa-boxes-packing"></i> Ajouter un Produit / Matériel
+            </h3>
+            <form onsubmit="saveProduct(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold mb-1">Désignation du produit *</label>
+                    <input type="text" id="prodName" required placeholder="Ex: Microscope Bino N2000 / Tube Sèche 5ml" class="w-full p-2 border rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold mb-1">Catégorie *</label>
+                        <select id="prodCategory" required class="w-full p-2 border rounded-lg">
+                            <option value="Consumables">Consommables</option>
+                            <option value="Glassware">Verrerie</option>
+                            <option value="Reagents">Réactifs</option>
+                            <option value="Devices">Appareils</option>
+                            <option value="Sterilization">Stérilisation</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Référence (REF) *</label>
+                        <input type="text" id="prodRef" required placeholder="REF-9021" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">N° Lot</label>
+                        <input type="text" id="prodLot" placeholder="LOT-2026-X" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Date Péremption</label>
+                        <input type="date" id="prodExp" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Prix Unitaire (DZD TTC) *</label>
+                        <input type="number" step="0.01" id="prodPrice" required placeholder="1500.00" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Quantité Stock *</label>
+                        <input type="number" id="prodStock" required placeholder="50" class="w-full p-2 border rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Photo du Produit</label>
+                    <input type="file" accept="image/*" onchange="convertImageToBase64(this, 'prodImagePreview', 'prodImageBase64')" class="w-full text-xs">
+                    <img id="prodImagePreview" src="https://placehold.co/100x100?text=Produit" class="w-20 h-20 mt-2 rounded border object-cover">
+                    <input type="hidden" id="prodImageBase64">
+                </div>
+                <div class="flex justify-end gap-2 border-t pt-3">
+                    <button type="button" onclick="closeProductModal()" class="px-4 py-2 border rounded-lg">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-lab-800 text-white rounded-lg font-bold">Enregistrer Produit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. SHOPPING CART & DIGITAL SIGNATURE MODAL -->
+    <div id="cartModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden p-5 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-sm font-bold text-lab-800 flex items-center gap-2">
+                    <i class="fa-solid fa-basket-shopping"></i> Panier & Bon de Commande
+                </h3>
+                <button onclick="closeCartModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div id="cartItemsContainer" class="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-lg bg-slate-50">
+                <!-- Items list dynamic -->
+            </div>
+
+            <!-- Total display -->
+            <div class="flex justify-between items-center bg-lab-50 p-3 rounded-lg border border-lab-100 font-bold text-xs text-lab-900">
+                <span>Total Estimé TTC:</span>
+                <span id="cartTotalDisplay" class="text-sm text-sky-700">0.00 DZD</span>
+            </div>
+
+            <!-- Client Checkout Form -->
+            <form onsubmit="processCheckout(event)" class="space-y-3 text-xs border-t pt-2">
+                <div class="font-bold text-slate-800">Coordonnées de l'Acheteur / Laboratoire</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold">Nom & Prénom / Représentant *</label>
+                        <input type="text" id="clientName" required placeholder="Dr. Benchikh Mohamed" class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block font-semibold">Nom Laboratoire / Hôpital *</label>
+                        <input type="text" id="clientLab" required placeholder="Labo d'Analyses Médicales" class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block font-semibold">Téléphone WhatsApp *</label>
+                        <input type="text" id="clientPhone" required placeholder="05XXXXXXXX" class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block font-semibold">Adresse *</label>
+                        <input type="text" id="clientAddress" required placeholder="Oran, Es Senia" class="w-full p-2 border rounded">
+                    </div>
+                </div>
+
+                <!-- Digital Signature Pad -->
+                <div>
+                    <label class="block font-semibold mb-1 flex justify-between">
+                        <span>Signature Électronique du Client *</span>
+                        <button type="button" onclick="clearSignatureCanvas()" class="text-red-500 hover:underline text-[10px]">Effacer</button>
+                    </label>
+                    <canvas id="signatureCanvas" width="450" height="110" class="w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg touch-none cursor-crosshair"></canvas>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t pt-2">
+                    <button type="button" onclick="closeCartModal()" class="px-4 py-2 border rounded-lg">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center gap-1.5">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> Valider & Générer Facture / WhatsApp
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. OFFICIAL PROFORMA INVOICE MODAL -->
+    <div id="invoiceModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-4 sm:p-8 space-y-4 my-auto border">
+            
+            <!-- Modal top controls (no-print) -->
+            <div class="flex justify-between items-center border-b pb-3 no-print">
+                <span class="text-xs font-bold text-slate-600">Aperçu Facture Proforma Officielle</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadInvoicePDF()" class="px-3 py-1.5 bg-sky-600 text-white rounded text-xs font-bold hover:bg-sky-500">
+                        <i class="fa-solid fa-file-pdf"></i> Télécharger PDF
+                    </button>
+                    <button onclick="window.print()" class="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-bold hover:bg-slate-700">
+                        <i class="fa-solid fa-print"></i> Imprimer
+                    </button>
+                    <button onclick="closeInvoiceModal()" class="px-3 py-1.5 border rounded text-xs">Fermer</button>
+                </div>
+            </div>
+
+            <!-- PRINTABLE INVOICE BODY CONTAINER -->
+            <div id="printable-invoice" class="bg-white text-slate-900 font-sans p-2 sm:p-4 border rounded shadow-sm text-xs relative">
+                
+                <!-- Invoice Header -->
+                <div class="flex justify-between items-start border-b-2 border-lab-800 pb-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <img id="invStoreLogo" src="https://placehold.co/80x80/0f4c81/ffffff?text=LAB" class="w-16 h-16 object-contain border rounded">
+                        <div>
+                            <h2 id="invStoreName" class="text-base font-bold text-lab-800 uppercase">ÉTABLISSEMENT DE MATÉRIEL DE LABORATOIRE</h2>
+                            <p id="invStoreAddress" class="text-[11px] text-slate-600">Adresse: Bab Ezzouar, Alger</p>
+                            <p id="invStorePhone" class="text-[11px] text-slate-600">Tél: 0670800009</p>
+                        </div>
+                    </div>
+                    <div class="text-right border-l pl-4 border-slate-200 text-[10px] space-y-0.5">
+                        <div class="font-bold text-xs text-lab-900 mb-1">IDENTIFIANTS LÉGAUX</div>
+                        <div>NIF: <span id="invStoreNIF">0000000000000</span></div>
+                        <div>NIS: <span id="invStoreNIS">0000000000</span></div>
+                        <div>RC: <span id="invStoreRC">16/00-0000000</span></div>
+                        <div>ART: <span id="invStoreNAI">00000000000</span></div>
+                    </div>
+                </div>
+
+                <!-- Invoice Meta & Customer Box -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                        <h3 class="font-bold text-lab-800 border-b pb-1 mb-1 text-xs">FACTURE PROFORMA</h3>
+                        <div>N° Facture: <b id="invNum">FP-2026-0012</b></div>
+                        <div>Date: <span id="invDate">19/10/2026</span></div>
+                        <div>Mode de Règlement: <b>Chèque / Virement / Espèce</b></div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                        <h3 class="font-bold text-slate-700 border-b pb-1 mb-1 text-xs">CLIENT / DESTINATAIRE</h3>
+                        <div>Client: <b id="invClientName">Dr. Benchikh</b></div>
+                        <div>Labo/Hôpital: <span id="invClientLab">Labo Central</span></div>
+                        <div>Adresse: <span id="invClientAddress">Alger</span></div>
+                        <div>Tél: <span id="invClientPhone">0550000000</span></div>
+                    </div>
+                </div>
+
+                <!-- Itemized Table with Security Diagonal Strikethrough -->
+                <div class="relative mb-4 border rounded overflow-hidden">
+                    <table class="w-full text-left text-[11px]">
+                        <thead class="bg-lab-800 text-white font-semibold uppercase text-[10px]">
+                            <tr>
+                                <th class="p-2 border-r">REF</th>
+                                <th class="p-2 border-r">DÉSIGNATION</th>
+                                <th class="p-2 border-r">N° LOT / EXP</th>
+                                <th class="p-2 border-r text-center">QTE</th>
+                                <th class="p-2 border-r text-right">PRIX U TTC</th>
+                                <th class="p-2 text-right">MONTANT TTC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invTableBody" class="divide-y divide-slate-200 relative min-h-[180px]">
+                            <!-- Items injected dynamically -->
+                        </tbody>
+                    </table>
+
+                    <!-- Security SVG Diagonal Strikethrough for Empty Space -->
+                    <svg id="securityStrikethrough" class="absolute inset-0 w-full h-full pointer-events-none opacity-25" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="0" y1="40" x2="100%" y2="100%" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4" />
+                    </svg>
+                </div>
+
+                <!-- Totals & Tafqit Number-to-Words -->
+                <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                    <!-- Tafqit Box -->
+                    <div class="flex-1 bg-sky-50/60 p-3 rounded border border-sky-100 text-[11px] space-y-1">
+                        <div class="font-bold text-lab-800">Arrêté la présente facture à la somme de:</div>
+                        <div id="invTafqitFR" class="italic text-slate-700 font-medium">--</div>
+                        <div id="invTafqitAR" class="font-semibold text-sky-900 text-right dir-rtl mt-1">--</div>
+                    </div>
+
+                    <!-- Totals Block -->
+                    <div class="w-full sm:w-64 bg-slate-50 p-2.5 rounded border text-xs space-y-1.5">
+                        <div class="flex justify-between">
+                            <span>Total HT:</span>
+                            <span id="invTotalHT" class="font-semibold">0.00 DZD</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>TVA (19% incluse):</span>
+                            <span id="invTotalTVA" class="font-semibold">0.00 DZD</span>
+                        </div>
+                        <div class="flex justify-between border-t pt-1 font-bold text-sm text-lab-800">
+                            <span>Total TTC:</span>
+                            <span id="invTotalTTC">0.00 DZD</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stamps & Signatures Footer -->
+                <div class="grid grid-cols-2 gap-4 border-t pt-3 mt-4 text-[11px]">
+                    <!-- Customer Signature -->
+                    <div class="text-center p-2 border rounded border-slate-100">
+                        <div class="font-bold text-slate-700 mb-1">Signature & Accord du Client</div>
+                        <div class="h-16 flex items-center justify-center">
+                            <img id="invClientSignatureImg" class="max-h-14 max-w-full object-contain">
+                        </div>
+                    </div>
+
+                    <!-- Store Official Stamp -->
+                    <div class="text-center p-2 border rounded border-slate-100">
+                        <div class="font-bold text-slate-700 mb-1">Cachet & Griffe Fournisseur</div>
+                        <div class="h-16 flex items-center justify-center">
+                            <img id="invStoreStampImg" src="https://placehold.co/120x60?text=CACHET" class="max-h-14 max-w-full object-contain">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. SUPER ADMIN SETTINGS MODAL (BaridiMob & RIP) -->
+    <div id="adminSettingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-5 space-y-4">
+            <h3 class="text-sm font-bold border-b pb-2 text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-wallet text-red-600"></i> Configuration BaridiMob / RIP Administrateur
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold mb-1">RIB / RIP Algérie Poste (20 chiffres)</label>
+                    <input type="text" id="adminRIP" placeholder="00799999000000000000" class="w-full p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Frais d'Abonnement Mensuel (DZD)</label>
+                    <input type="number" id="adminSubFee" placeholder="2000" class="w-full p-2 border rounded-lg">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 border-t pt-3">
+                <button onclick="closeAdminSettingsModal()" class="px-4 py-2 border rounded-lg text-xs">Annuler</button>
+                <button onclick="saveAdminSettings()" class="px-5 py-2 bg-red-600 text-white rounded-lg text-xs font-bold">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- APPLICATION JAVASCRIPT LOGIC -->
+    <script>
+        /**
+         * FIREBASE REALTIME DATABASE & LOCAL STORAGE FALLBACK
+         */
+        const FIREBASE_DB_URL = "https://laboratoire-13277-default-rtdb.firebaseio.com/";
+
+        // Translation Dictionary
+        const TRANSLATIONS = {
+            fr: {
+                appTitle: "Matériel de Laboratoire",
+                appSubtitle: "Équipement Scientifique & Médical Algérie",
+                connexion: "Espace Pro / Admin",
+                tabCatalog: "Catalogue Général",
+                tabStores: "Fournisseurs & Labos",
+                tabSeller: "Gestion Vendeur",
+                tabAdmin: "Super Admin",
+                catAll: "Tous",
+                catCons: "Consommables",
+                catGlass: "Verrerie",
+                catReag: "Réactifs",
+                catDev: "Appareils",
+                catSter: "Stérilisation",
+                storesTitle: "Répertoire des Vendeurs Approuvés en Algérie",
+                editProfile: "Profil & Cachet",
+                addProduct: "Nouveau Produit",
+                myProducts: "Mes Produits Enregistrés",
+                logout: "Déconnexion"
+            },
+            ar: {
+                appTitle: "عتاد المخابر الطبية",
+                appSubtitle: "المعدات العلمية والطبية - الجزائر",
+                connexion: "فضاء المحترفين / الإدارة",
+                tabCatalog: "الكتالوج العام",
+                tabStores: "الموردون والمخابر",
+                tabSeller: "إدارة البائع",
+                tabAdmin: "المشرف العام",
+                catAll: "الكل",
+                catCons: "المستهلكات",
+                catGlass: "الزجاجيات",
+                catReag: "الكواشف",
+                catDev: "الأجهزة",
+                catSter: "التعقيم",
+                storesTitle: "دليل الموردين المعتمدين في الجزائر",
+                editProfile: "الملف والختم",
+                addProduct: "إضافة منتج",
+                myProducts: "منتجاتي المسجلة",
+                logout: "خروج"
+            }
+        };
+
+        let currentLang = 'fr';
+        let currentUser = JSON.parse(localStorage.getItem('lab_current_user')) || null;
+        let selectedCategory = 'ALL';
+        let cart = [];
+
+        // In-memory data store
+        let dbStores = [];
+        let dbProducts = [];
+        let dbAdminSettings = { rip: "00799999000000000000", subFee: "2000" };
+
+        // Signature Canvas State
+        let sigCanvas, sigCtx, isDrawing = false;
+
+        // On Page Load Initialization
+        window.onload = function () {
+            initSignaturePad();
+            loadInitialData();
+            updateAuthUI();
+        };
+
+        /**
+         * BILINGUAL SWITCHER
+         */
+        function toggleLanguage() {
+            currentLang = currentLang === 'fr' ? 'ar' : 'fr';
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('langLabel').innerText = currentLang === 'ar' ? 'Français' : 'العربية';
+            
+            // Translate UI elements with data-tr
+            document.querySelectorAll('[data-tr]').forEach(el => {
+                const key = el.getAttribute('data-tr');
+                if (TRANSLATIONS[currentLang][key]) {
+                    el.innerText = TRANSLATIONS[currentLang][key];
+                }
+            });
+            renderCatalog();
+        }
+
+        /**
+         * TAB NAVIGATION
+         */
+        function switchTab(tabId) {
+            ['catalog', 'stores', 'seller', 'admin'].forEach(t => {
+                const sec = document.getElementById(`sec-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (sec) sec.classList.add('hidden');
+                if (nav) nav.classList.remove('tab-active');
+            });
+
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) activeNav.classList.add('tab-active');
+
+            if (tabId === 'catalog') renderCatalog();
+            if (tabId === 'stores') renderStoresDirectory();
+            if (tabId === 'seller') renderSellerDashboard();
+            if (tabId === 'admin') renderAdminPanel();
+        }
+
+        /**
+         * AUTHENTICATION & SESSION MANAGEMENT
+         */
+        function openAuthModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function switchAuthSubTab(type) {
+            if (type === 'login') {
+                document.getElementById('formLogin').classList.remove('hidden');
+                document.getElementById('formRegister').classList.add('hidden');
+                document.getElementById('authTabLogin').className = "flex-1 py-3 border-b-2 border-lab-800 text-lab-800 font-bold";
+                document.getElementById('authTabRegister').className = "flex-1 py-3 text-slate-500 hover:text-slate-800 font-bold";
+            } else {
+                document.getElementById('formLogin').classList.add('hidden');
+                document.getElementById('formRegister').classList.remove('hidden');
+                document.getElementById('authTabLogin').className = "flex-1 py-3 text-slate-500 hover:text-slate-800 font-bold";
+                document.getElementById('authTabRegister').className = "flex-1 py-3 border-b-2 border-lab-800 text-lab-800 font-bold";
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const phone = document.getElementById('loginPhone').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+
+            // Super Admin hardcoded check
+            if (phone === '0670800009' && pass === '2002') {
+                currentUser = { role: 'admin', name: 'Super Admin', phone: phone };
+                localStorage.setItem('lab_current_user', JSON.stringify(currentUser));
+                closeAuthModal();
+                updateAuthUI();
+                switchTab('admin');
+                return;
+            }
+
+            // Store Vendor Check
+            const store = dbStores.find(s => s.phone === phone && s.password === pass);
+            if (store) {
+                currentUser = { ...store, role: 'seller' };
+                localStorage.setItem('lab_current_user', JSON.stringify(currentUser));
+                closeAuthModal();
+                updateAuthUI();
+                if (store.status === 'pending') {
+                    showBlockedModal();
+                } else {
+                    switchTab('seller');
+                }
+            } else {
+                alert('Numéro de téléphone ou mot de passe incorrect!');
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const storeData = {
+                id: 'store_' + Date.now(),
+                name: document.getElementById('regStoreName').value,
+                phone: document.getElementById('regPhone').value,
+                password: document.getElementById('regPassword').value,
+                address: document.getElementById('regAddress').value,
+                nin: document.getElementById('regNIN').value,
+                rc: document.getElementById('regRC').value,
+                nif: document.getElementById('regNIF').value,
+                nis: document.getElementById('regNIS').value,
+                nai: document.getElementById('regNAI').value,
+                status: 'pending', // Default pending approval
+                logo: '',
+                stamp: ''
+            };
+
+            dbStores.push(storeData);
+            syncDataToFirebase('stores', dbStores);
+
+            currentUser = { ...storeData, role: 'seller' };
+            localStorage.setItem('lab_current_user', JSON.stringify(currentUser));
+            closeAuthModal();
+            updateAuthUI();
+            showBlockedModal();
+        }
+
+        function updateAuthUI() {
+            const container = document.getElementById('authNavContainer');
+            const navSeller = document.getElementById('nav-seller');
+            const navAdmin = document.getElementById('nav-admin');
+            const banner = document.getElementById('userBanner');
+
+            if (currentUser) {
+                container.innerHTML = `
+                    <button onclick="logout()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-xs font-semibold shadow">
+                        <i class="fa-solid fa-sign-out"></i> ${currentUser.name}
+                    </button>
+                `;
+                banner.classList.remove('hidden');
+                document.getElementById('userInfoText').innerText = `Connecté: ${currentUser.name} (${currentUser.role.toUpperCase()})`;
+
+                if (currentUser.role === 'admin') {
+                    navAdmin.classList.remove('hidden');
+                    navSeller.classList.add('hidden');
+                } else {
+                    navSeller.classList.remove('hidden');
+                    navAdmin.classList.add('hidden');
+                    if (currentUser.status === 'pending') showBlockedModal();
+                }
+            } else {
+                container.innerHTML = `
+                    <button onclick="openAuthModal()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-lock"></i> <span>Espace Pro / Admin</span>
+                    </button>
+                `;
+                navSeller.classList.add('hidden');
+                navAdmin.classList.add('hidden');
+                banner.classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('lab_current_user');
+            document.getElementById('blockedModal').classList.add('hidden');
+            updateAuthUI();
+            switchTab('catalog');
+        }
+
+        function showBlockedModal() {
+            document.getElementById('pendingBaridiInfo').innerText = `RIP: ${dbAdminSettings.rip} (Abonnement: ${dbAdminSettings.subFee} DZD)`;
+            document.getElementById('blockedModal').classList.remove('hidden');
+        }
+
+        /**
+         * DATABASE & FIREBASE SYNC WITH LOCALSTORAGE FALLBACK
+         */
+        async function loadInitialData() {
+            try {
+                const res = await fetch(`${FIREBASE_DB_URL}.json`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        dbStores = data.stores ? Object.values(data.stores) : [];
+                        dbProducts = data.products ? Object.values(data.products) : [];
+                        if (data.adminSettings) dbAdminSettings = data.adminSettings;
+                    }
+                }
+            } catch (err) {
+                console.log("Firebase sync failed, fallback to LocalStorage", err);
+                dbStores = JSON.parse(localStorage.getItem('lab_stores')) || [];
+                dbProducts = JSON.parse(localStorage.getItem('lab_products')) || [];
+            }
+
+            // Seed sample store & product if completely empty
+            if (dbStores.length === 0) {
+                dbStores.push({
+                    id: 'store_demo',
+                    name: 'Sarl BioMed Equipements',
+                    phone: '0550112233',
+                    address: 'Kouba, Alger',
+                    status: 'approved',
+                    nif: '001216089012345',
+                    rc: '16/00-0982341B20',
+                    nis: '09921827361',
+                    nai: '16120098123',
+                    logo: '',
+                    stamp: ''
+                });
+            }
+
+            if (dbProducts.length === 0) {
+                dbProducts.push({
+                    id: 'prod_1',
+                    storeId: 'store_demo',
+                    name: 'Microscope Binoculaire LED Optima 300',
+                    category: 'Devices',
+                    ref: 'MB-OPT-300',
+                    lot: 'LOT-2025-A',
+                    exp: '2029-12-31',
+                    price: 85000,
+                    stock: 5,
+                    image: 'https://placehold.co/300x200/0f4c81/ffffff?text=Microscope'
+                }, {
+                    id: 'prod_2',
+                    storeId: 'store_demo',
+                    name: 'Tubes Sèches Rouge 5ml (Boite de 100)',
+                    category: 'Consumables',
+                    ref: 'TUB-RED-5',
+                    lot: 'L-88219',
+                    exp: '2027-06-15',
+                    price: 2400,
+                    stock: 120,
+                    image: 'https://placehold.co/300x200/0284c7/ffffff?text=Tubes+5ml'
+                });
+            }
+
+            renderCatalog();
+        }
+
+        function syncDataToFirebase(node, data) {
+            localStorage.setItem(`lab_${node}`, JSON.stringify(data));
+            fetch(`${FIREBASE_DB_URL}${node}.json`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            }).catch(e => console.log('Firebase sync error', e));
+        }
+
+        /**
+         * CATALOG & GALLERY LOGIC
+         */
+        function filterCategory(cat) {
+            selectedCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if (btn.getAttribute('data-cat') === cat) {
+                    btn.className = "cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-lab-800 text-white whitespace-nowrap";
+                } else {
+                    btn.className = "cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap";
+                }
+            });
+            renderCatalog();
+        }
+
+        function renderCatalog() {
+            const grid = document.getElementById('productsGrid');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            grid.innerHTML = '';
+
+            const filtered = dbProducts.filter(p => {
+                const matchCat = selectedCategory === 'ALL' || p.category === selectedCategory;
+                const matchSearch = p.name.toLowerCase().includes(search) || p.ref.toLowerCase().includes(search);
+                return matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-xs">Aucun matériel ou réactif trouvé.</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const store = dbStores.find(s => s.id === p.storeId) || { name: 'Fournisseur Agréé' };
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition";
+                card.innerHTML = `
+                    <div class="h-40 bg-slate-100 relative overflow-hidden">
+                        <img src="${p.image || 'https://placehold.co/300x200?text=Produit'}" class="w-full h-full object-cover">
+                        <span class="absolute top-2 right-2 bg-lab-800/80 text-white text-[10px] px-2 py-0.5 rounded font-semibold backdrop-blur-sm">${p.category}</span>
+                    </div>
+                    <div class="p-3 flex-1 flex flex-col justify-between space-y-2">
+                        <div>
+                            <div class="text-[10px] font-bold text-sky-700 uppercase tracking-wide">${store.name}</div>
+                            <h3 class="font-bold text-slate-800 text-xs line-clamp-2">${p.name}</h3>
+                            <div class="text-[10px] text-slate-500 mt-1">REF: <span class="font-mono">${p.ref}</span> | Lot: ${p.lot || 'N/A'}</div>
+                        </div>
+                        <div class="pt-2 border-t flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-900">${p.price.toLocaleString()} DZD</span>
+                                <span class="block text-[9px] text-slate-400">TTC</span>
+                            </div>
+                            <button onclick='addToCart(${JSON.stringify(p)})' class="px-3 py-1.5 bg-lab-800 hover:bg-sky-600 text-white text-xs font-semibold rounded-lg shadow transition flex items-center gap-1">
+                                <i class="fa-solid fa-cart-plus"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        /**
+         * STORES DIRECTORY
+         */
+        function renderStoresDirectory() {
+            const grid = document.getElementById('storesGrid');
+            grid.innerHTML = '';
+
+            const approvedStores = dbStores.filter(s => s.status === 'approved');
+            if (approvedStores.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">Aucun fournisseur approuvé pour le moment.</div>`;
+                return;
+            }
+
+            approvedStores.forEach(s => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3";
+                card.innerHTML = `
+                    <img src="${s.logo || 'https://placehold.co/80x80/0f4c81/ffffff?text=STORE'}" class="w-14 h-14 rounded-lg object-cover border">
+                    <div class="space-y-1 text-xs">
+                        <h3 class="font-bold text-slate-800">${s.name}</h3>
+                        <p class="text-[11px] text-slate-500"><i class="fa-solid fa-location-dot text-lab-500"></i> ${s.address}</p>
+                        <p class="text-[11px] text-slate-500"><i class="fa-solid fa-phone text-emerald-600"></i> ${s.phone}</p>
+                        <div class="text-[9px] text-slate-400 font-mono">NIF: ${s.nif || 'N/A'} | RC: ${s.rc || 'N/A'}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        /**
+         * SELLER DASHBOARD LOGIC
+         */
+        function renderSellerDashboard() {
+            if (!currentUser || currentUser.role !== 'seller') return;
+
+            document.getElementById('sellerStoreName').innerText = currentUser.name;
+            document.getElementById('sellerLegalInfo').innerText = `NIF: ${currentUser.nif || '--'} | RC: ${currentUser.rc || '--'}`;
+            if (currentUser.logo) document.getElementById('sellerDashboardLogo').src = currentUser.logo;
+
+            const myProds = dbProducts.filter(p => p.storeId === currentUser.id);
+            document.getElementById('myProductsCount').innerText = `${myProds.length} Produits`;
+
+            const tbody = document.getElementById('sellerProductsTable');
+            tbody.innerHTML = '';
+
+            myProds.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3"><img src="${p.image || 'https://placehold.co/40x40?text=P'}" class="w-10 h-10 object-cover rounded border"></td>
+                    <td class="p-3 font-semibold text-slate-800">${p.name}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 rounded text-[10px]">${p.category}</span></td>
+                    <td class="p-3 font-mono">${p.ref}<br><span class="text-[10px] text-slate-400">Lot: ${p.lot || '-'}</span></td>
+                    <td class="p-3 text-[11px]">${p.exp || '-'}</td>
+                    <td class="p-3 font-bold text-lab-800">${p.price.toLocaleString()} DZD</td>
+                    <td class="p-3 font-semibold">${p.stock}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteProduct('${p.id}')" class="text-red-500 hover:text-red-700 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openAddProductModal() {
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            const newProd = {
+                id: 'prod_' + Date.now(),
+                storeId: currentUser.id,
+                name: document.getElementById('prodName').value,
+                category: document.getElementById('prodCategory').value,
+                ref: document.getElementById('prodRef').value,
+                lot: document.getElementById('prodLot').value,
+                exp: document.getElementById('prodExp').value,
+                price: parseFloat(document.getElementById('prodPrice').value),
+                stock: parseInt(document.getElementById('prodStock').value),
+                image: document.getElementById('prodImageBase64').value || 'https://placehold.co/300x200?text=Produit'
+            };
+
+            dbProducts.push(newProd);
+            syncDataToFirebase('products', dbProducts);
+            closeProductModal();
+            renderSellerDashboard();
+            renderCatalog();
+        }
+
+        function deleteProduct(id) {
+            if (confirm("Supprimer ce produit définitivement?")) {
+                dbProducts = dbProducts.filter(p => p.id !== id);
+                syncDataToFirebase('products', dbProducts);
+                renderSellerDashboard();
+                renderCatalog();
+            }
+        }
+
+        function openStoreProfileModal() {
+            document.getElementById('storeProfileModal').classList.remove('hidden');
+        }
+        function closeStoreProfileModal() {
+            document.getElementById('storeProfileModal').classList.add('hidden');
+        }
+
+        function saveStoreProfileImages() {
+            const logo = document.getElementById('logoBase64').value;
+            const stamp = document.getElementById('stampBase64').value;
+
+            if (logo) currentUser.logo = logo;
+            if (stamp) currentUser.stamp = stamp;
+
+            // Update in dbStores
+            const idx = dbStores.findIndex(s => s.id === currentUser.id);
+            if (idx !== -1) {
+                dbStores[idx] = currentUser;
+                syncDataToFirebase('stores', dbStores);
+                localStorage.setItem('lab_current_user', JSON.stringify(currentUser));
+            }
+
+            closeStoreProfileModal();
+            renderSellerDashboard();
+            alert('Profil mis à jour!');
+        }
+
+        /**
+         * SUPER ADMIN PANEL
+         */
+        function renderAdminPanel() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+
+            const tbody = document.getElementById('adminStoresTable');
+            tbody.innerHTML = '';
+
+            dbStores.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${s.name}</td>
+                    <td class="p-3 text-slate-600">${s.phone}</td>
+                    <td class="p-3 text-[10px] font-mono">NIF: ${s.nif||'-'}<br>RC: ${s.rc||'-'}</td>
+                    <td class="p-3 text-slate-600">${s.address}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded ${s.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${s.status.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="toggleStoreStatus('${s.id}', 'approved')" class="px-2 py-1 bg-emerald-600 text-white rounded text-[10px] font-bold">Approuver</button>
+                        <button onclick="toggleStoreStatus('${s.id}', 'blocked')" class="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold">Bloquer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleStoreStatus(storeId, status) {
+            const idx = dbStores.findIndex(s => s.id === storeId);
+            if (idx !== -1) {
+                dbStores[idx].status = status;
+                syncDataToFirebase('stores', dbStores);
+                renderAdminPanel();
+            }
+        }
+
+        function openAdminSettingsModal() {
+            document.getElementById('adminRIP').value = dbAdminSettings.rip || '';
+            document.getElementById('adminSubFee').value = dbAdminSettings.subFee || '';
+            document.getElementById('adminSettingsModal').classList.remove('hidden');
+        }
+        function closeAdminSettingsModal() {
+            document.getElementById('adminSettingsModal').classList.add('hidden');
+        }
+        function saveAdminSettings() {
+            dbAdminSettings.rip = document.getElementById('adminRIP').value;
+            dbAdminSettings.subFee = document.getElementById('adminSubFee').value;
+            syncDataToFirebase('adminSettings', dbAdminSettings);
+            closeAdminSettingsModal();
+            alert('Paramètres enregistrés!');
+        }
+
+        /**
+         * CART & DIGITAL SIGNATURE
+         */
+        function addToCart(prod) {
+            const existing = cart.find(i => i.product.id === prod.id);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ product: prod, qty: 1 });
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const badge = document.getElementById('cartBadge');
+            const totalQty = cart.reduce((acc, i) => acc + i.qty, 0);
+
+            if (totalQty > 0) {
+                badge.innerText = totalQty;
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function openCartModal() {
+            if (cart.length === 0) {
+                alert("Votre panier est vide!");
+                return;
+            }
+            renderCartModalList();
+            document.getElementById('cartModal').classList.remove('hidden');
+            setTimeout(resizeSignatureCanvas, 200);
+        }
+
+        function closeCartModal() {
+            document.getElementById('cartModal').classList.add('hidden');
+        }
+
+        function renderCartModalList() {
+            const container = document.getElementById('cartItemsContainer');
+            container.innerHTML = '';
+            let total = 0;
+
+            cart.forEach((item, idx) => {
+                const subtotal = item.product.price * item.qty;
+                total += subtotal;
+
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between bg-white p-2 rounded border text-xs";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <img src="${item.product.image}" class="w-10 h-10 object-cover rounded">
+                        <div>
+                            <div class="font-bold text-slate-800">${item.product.name}</div>
+                            <div class="text-[10px] text-slate-500">${item.product.price.toLocaleString()} DZD x ${item.qty}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-lab-800">${subtotal.toLocaleString()} DZD</span>
+                        <button onclick="removeFromCart(${idx})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('cartTotalDisplay').innerText = `${total.toLocaleString()} DZD`;
+        }
+
+        function removeFromCart(idx) {
+            cart.splice(idx, 1);
+            updateCartUI();
+            if (cart.length === 0) closeCartModal();
+            else renderCartModalList();
+        }
+
+        function initSignaturePad() {
+            sigCanvas = document.getElementById('signatureCanvas');
+            sigCtx = sigCanvas.getContext('2d');
+            sigCtx.strokeStyle = "#0f4c81";
+            sigCtx.lineWidth = 2;
+
+            function startDraw(e) {
+                isDrawing = true;
+                sigCtx.beginPath();
+                const pos = getPos(e);
+                sigCtx.moveTo(pos.x, pos.y);
+            }
+            function moveDraw(e) {
+                if (!isDrawing) return;
+                const pos = getPos(e);
+                sigCtx.lineTo(pos.x, pos.y);
+                sigCtx.stroke();
+            }
+            function endDraw() {
+                isDrawing = false;
+            }
+
+            function getPos(e) {
+                const rect = sigCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            sigCanvas.addEventListener('mousedown', startDraw);
+            sigCanvas.addEventListener('mousemove', moveDraw);
+            sigCanvas.addEventListener('mouseup', endDraw);
+            sigCanvas.addEventListener('touchstart', startDraw);
+            sigCanvas.addEventListener('touchmove', moveDraw);
+            sigCanvas.addEventListener('touchend', endDraw);
+        }
+
+        function clearSignatureCanvas() {
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        }
+
+        function resizeSignatureCanvas() {
+            sigCanvas.width = sigCanvas.parentElement.clientWidth;
+            sigCanvas.height = 110;
+            sigCtx.strokeStyle = "#0f4c81";
+            sigCtx.lineWidth = 2;
+        }
+
+        /**
+         * PROFORMA INVOICE & TAFQIT LOGIC
+         */
+        function processCheckout(e) {
+            e.preventDefault();
+
+            const clientInfo = {
+                name: document.getElementById('clientName').value,
+                lab: document.getElementById('clientLab').value,
+                phone: document.getElementById('clientPhone').value,
+                address: document.getElementById('clientAddress').value,
+                signature: sigCanvas.toDataURL()
+            };
+
+            // Group cart by Store to generate proforma
+            const storeId = cart[0].product.storeId;
+            const store = dbStores.find(s => s.id === storeId) || {
+                name: 'Établissement Général Matériel Médical',
+                address: 'Alger, Algérie',
+                phone: '0670800009',
+                nif: '0000000000000',
+                rc: '00/00-0000000',
+                nis: '0000000000',
+                nai: '00000000000'
+            };
+
+            generateProformaInvoice(store, clientInfo, cart);
+            closeCartModal();
+            openInvoiceModal();
+
+            // Send WhatsApp notification
+            sendWhatsAppOrder(store.phone, clientInfo, cart);
+            cart = [];
+            updateCartUI();
+        }
+
+        function generateProformaInvoice(store, client, items) {
+            document.getElementById('invStoreName').innerText = store.name;
+            document.getElementById('invStoreAddress').innerText = `Adresse: ${store.address}`;
+            document.getElementById('invStorePhone').innerText = `Tél: ${store.phone}`;
+            document.getElementById('invStoreNIF').innerText = store.nif || '0000000000000';
+            document.getElementById('invStoreNIS').innerText = store.nis || '0000000000';
+            document.getElementById('invStoreRC').innerText = store.rc || '00/00-0000000';
+            document.getElementById('invStoreNAI').innerText = store.nai || '00000000000';
+
+            if (store.logo) document.getElementById('invStoreLogo').src = store.logo;
+            if (store.stamp) document.getElementById('invStoreStampImg').src = store.stamp;
+            document.getElementById('invClientSignatureImg').src = client.signature;
+
+            document.getElementById('invNum').innerText = `FP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+            document.getElementById('invDate').innerText = new Date().toLocaleDateString('fr-FR');
+
+            document.getElementById('invClientName').innerText = client.name;
+            document.getElementById('invClientLab').innerText = client.lab;
+            document.getElementById('invClientAddress').innerText = client.address;
+            document.getElementById('invClientPhone').innerText = client.phone;
+
+            const tbody = document.getElementById('invTableBody');
+            tbody.innerHTML = '';
+
+            let totalTTC = 0;
+
+            items.forEach(item => {
+                const montant = item.product.price * item.qty;
+                totalTTC += montant;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-2 border-r font-mono">${item.product.ref}</td>
+                    <td class="p-2 border-r font-semibold">${item.product.name}</td>
+                    <td class="p-2 border-r text-[10px]">${item.product.lot || '-'} / ${item.product.exp || '-'}</td>
+                    <td class="p-2 border-r text-center font-bold">${item.qty}</td>
+                    <td class="p-2 border-r text-right">${item.product.price.toLocaleString()}</td>
+                    <td class="p-2 text-right font-bold">${montant.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Calculate HT and TVA (19%)
+            const totalHT = totalTTC / 1.19;
+            const totalTVA = totalTTC - totalHT;
+
+            document.getElementById('invTotalHT').innerText = `${totalHT.toFixed(2)} DZD`;
+            document.getElementById('invTotalTVA').innerText = `${totalTVA.toFixed(2)} DZD`;
+            document.getElementById('invTotalTTC').innerText = `${totalTTC.toLocaleString()} DZD`;
+
+            // Tafqit
+            document.getElementById('invTafqitFR').innerText = numberToWordsFR(totalTTC) + " Dinars Algériens";
+            document.getElementById('invTafqitAR').innerText = numberToWordsAR(totalTTC) + " دينار جزائري";
+        }
+
+        function openInvoiceModal() {
+            document.getElementById('invoiceModal').classList.remove('hidden');
+        }
+        function closeInvoiceModal() {
+            document.getElementById('invoiceModal').classList.add('hidden');
+        }
+
+        function downloadInvoicePDF() {
+            const element = document.getElementById('printable-invoice');
+            const opt = {
+                margin:       5,
+                filename:     'Facture_Proforma_Laboratoire.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function sendWhatsAppOrder(phone, client, items) {
+            let msg = `*NOUVELLE COMMANDE MATÉRIEL DE LABORATOIRE*\n`;
+            msg += `Client: ${client.name} (${client.lab})\n`;
+            msg += `Tél: ${client.phone}\n\n`;
+            msg += `*Articles:*\n`;
+            items.forEach(i => {
+                msg += `- ${i.product.name} (x${i.qty}) : ${i.product.price * i.qty} DZD\n`;
+            });
+            const cleanPhone = phone.replace(/[^0-9]/g, '');
+            const targetPhone = cleanPhone.startsWith('0') ? '213' + cleanPhone.substring(1) : cleanPhone;
+            window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        /**
+         * DYNAMIC TAFQIT (NUMBER TO WORDS IN FRENCH & ARABIC)
+         */
+        function numberToWordsFR(num) {
+            const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+            const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+            const integerPart = Math.floor(num);
+            if (integerPart === 0) return 'zéro';
+            
+            if (integerPart < 10) return units[integerPart];
+            if (integerPart < 100) {
+                const t = Math.floor(integerPart / 10);
+                const u = integerPart % 10;
+                return tens[t] + (u ? '-' + units[u] : '');
+            }
+            if (integerPart < 1000) {
+                const h = Math.floor(integerPart / 100);
+                const rest = integerPart % 100;
+                return (h > 1 ? units[h] + ' ' : '') + 'cent' + (rest ? ' ' + numberToWordsFR(rest) : '');
+            }
+            if (integerPart < 1000000) {
+                const k = Math.floor(integerPart / 1000);
+                const rest = integerPart % 1000;
+                return numberToWordsFR(k) + ' mille' + (rest ? ' ' + numberToWordsFR(rest) : '');
+            }
+            return integerPart.toString();
+        }
+
+        function numberToWordsAR(num) {
+            const integerPart = Math.floor(num);
+            if (integerPart === 0) return 'صفر';
+
+            const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+            const tens = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+
+            if (integerPart < 10) return ones[integerPart];
+            if (integerPart < 100) {
+                const t = Math.floor(integerPart / 10);
+                const o = integerPart % 10;
+                return (o ? ones[o] + ' و ' : '') + tens[t];
+            }
+            if (integerPart < 1000) {
+                const h = Math.floor(integerPart / 100);
+                const rest = integerPart % 100;
+                const hundredText = h === 1 ? 'مائة' : h === 2 ? 'مائتان' : ones[h] + ' مائة';
+                return hundredText + (rest ? ' و ' + numberToWordsAR(rest) : '');
+            }
+            if (integerPart < 1000000) {
+                const k = Math.floor(integerPart / 1000);
+                const rest = integerPart % 1000;
+                const thousandText = k === 1 ? 'ألف' : k === 2 ? 'ألفان' : numberToWordsAR(k) + ' آلاف';
+                return thousandText + (rest ? ' و ' + numberToWordsAR(rest) : '');
+            }
+            return integerPart.toString();
+        }
+
+        /**
+         * IMAGE FILE TO BASE64 CONVERTOR WITH SIZE CHECK
+         */
+        function convertImageToBase64(input, previewId, hiddenInputId) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (file.size > 2 * 1024 * 1024) {
+                    alert("La taille de la photo ne doit pas dépasser 2MB!");
+                    input.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById(previewId).src = e.target.result;
+                    document.getElementById(hiddenInputId).value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+</body>
+</html>
